@@ -1,0 +1,72 @@
+#!python
+
+import socket
+import simplejson as json
+import curses
+import time
+import atexit
+import sys
+
+argc = len(sys.argv)
+
+if argc < 2:
+    raise Exception("You have to specify the uWSGI stats socket")
+
+addr = sys.argv[1]
+sfamily = socket.AF_UNIX
+addr_tuple = (addr,)
+if ':' in addr:
+    sfamily = socket.AF_INET
+    addr_parts = addr.split(':')
+    addr_tuple = (addr_parts[0], int(addr_parts[1]))
+
+freq = 3
+try:
+    freg = int(sys.argv[2])
+except:
+    pass
+
+screen = curses.initscr()
+atexit.register(curses.endwin)
+
+curses.curs_set(0)
+screen.clear()
+
+while True:
+
+    js = ''
+
+    try:
+        s = socket.socket(sfamily, socket.SOCK_STREAM)
+        s.connect( addr_tuple )
+
+        while True:
+            data = s.recv(4096)
+            if len(data) < 1:
+                break
+            js += data
+    except:
+        curses.endwin()
+        raise Exception("unable to get uWSGI statistics")
+
+    dd = json.loads(js)
+
+    tot = sum( [worker['requests'] for worker in dd['workers']] )
+    tx = sum( [worker['tx'] for worker in dd['workers']] )
+
+    screen.addstr(0, 0, "%s - requests: %d - bytes transferred: %d" % (time.ctime(), tot, tx))
+    screen.addstr(1, 0, "\tWID\tPID\tREQ\tEXC\tSTATUS\tAVG\tRSS\tVSZ\tTX\t", curses.A_REVERSE)
+    pos = 2
+    for worker in dd['workers']:
+        screen.addstr(pos, 0, "\t%d\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d" % (
+            worker['id'], worker['pid'], worker['requests'], worker['exceptions'], worker['status'], worker['avg_rt']/1000,
+            worker['rss']/1024/1024, worker['vsz']/1024/1024,
+            worker['tx']
+        ))
+        pos += 1
+    screen.refresh()
+
+    s.close()
+    time.sleep(freq)
+
+
