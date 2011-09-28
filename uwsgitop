@@ -14,7 +14,7 @@ if argc < 2:
 
 addr = sys.argv[1]
 sfamily = socket.AF_UNIX
-addr_tuple = (addr,)
+addr_tuple = addr
 if ':' in addr:
     sfamily = socket.AF_INET
     addr_parts = addr.split(':')
