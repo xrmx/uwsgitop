@@ -54,14 +54,19 @@ while True:
     tot = sum( [worker['requests'] for worker in dd['workers']] )
     tx = sum( [worker['tx'] for worker in dd['workers']] )
 
-    screen.addstr(0, 0, "%s - requests: %d - bytes transferred: %d" % (time.ctime(), tot, tx))
-    screen.addstr(1, 0, "\tWID\tPID\tREQ\tEXC\tSTATUS\tAVG\tRSS\tVSZ\tTX\t", curses.A_REVERSE)
+    
+    uversion = ''
+    if 'version' in dd:
+        uversion = '-' + dd['version']
+
+    screen.addstr(0, 0, "uwsgi%s@%s - %s - requests: %d - bytes transferred: %d" % (uversion, socket.gethostname(), time.ctime(), tot, tx))
+    screen.addstr(1, 0, "\tWID\tPID\tREQ\tEXC\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRT\t", curses.A_REVERSE)
     pos = 2
     for worker in dd['workers']:
-        screen.addstr(pos, 0, "\t%d\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d" % (
+        screen.addstr(pos, 0, "\t%d\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d\t%d" % (
             worker['id'], worker['pid'], worker['requests'], worker['exceptions'], worker['status'], worker['avg_rt']/1000,
             worker['rss']/1024/1024, worker['vsz']/1024/1024,
-            worker['tx']
+            worker['tx'], worker['running_time']/1000
         ))
         pos += 1
     screen.refresh()
