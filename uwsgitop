@@ -6,6 +6,22 @@ import curses
 import time
 import atexit
 import sys
+import traceback
+
+need_reset = True
+
+def game_over():
+    global need_reset
+    if need_reset:
+        curses.endwin()
+
+def exc_hook(type, value, tb):
+    global need_reset
+    need_reset = False
+    curses.endwin()
+    traceback.print_exception(type, value, tb)
+
+sys.excepthook = exc_hook
 
 argc = len(sys.argv)
 
@@ -27,10 +43,23 @@ except:
     pass
 
 screen = curses.initscr()
-atexit.register(curses.endwin)
+screen.timeout(freq*1000)
+atexit.register(game_over)
 
 curses.curs_set(0)
 screen.clear()
+
+def reqcount(a, b):
+    if a['requests'] > b['requests']:
+        return -1
+    if a['requests'] < b['requests']:
+        return 1
+    return 0
+
+def calc_percent(tot, req):
+    if tot == 0:
+        return 0.0
+    return (100 *float(req))/float(tot)
 
 while True:
 
@@ -46,7 +75,6 @@ while True:
                 break
             js += data
     except:
-        curses.endwin()
         raise Exception("unable to get uWSGI statistics")
 
     dd = json.loads(js)
@@ -59,12 +87,16 @@ while True:
     if 'version' in dd:
         uversion = '-' + dd['version']
 
-    screen.addstr(0, 0, "uwsgi%s@%s - %s - requests: %d - bytes transferred: %d" % (uversion, socket.gethostname(), time.ctime(), tot, tx))
-    screen.addstr(1, 0, "\tWID\tPID\tREQ\tEXC\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRT\t", curses.A_REVERSE)
+    if not 'listen_queue' in dd:
+        dd['listen_queue'] = 0 
+    screen.addstr(0, 0, "uwsgi%s@%s - %s - req: %d - lq: %d - tx: %d" % (uversion, socket.gethostname(), time.ctime(), tot, dd['listen_queue'], tx))
+    screen.addstr(1, 0, "\tWID\t%\tPID\tREQ\tEXC\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRT\t", curses.A_REVERSE)
     pos = 2
+
+    dd['workers'].sort(reqcount)
     for worker in dd['workers']:
-        screen.addstr(pos, 0, "\t%d\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d\t%d" % (
-            worker['id'], worker['pid'], worker['requests'], worker['exceptions'], worker['status'], worker['avg_rt']/1000,
+        screen.addstr(pos, 0, "\t%d\t%.2f\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d\t%d" % (
+            worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], worker['status'], worker['avg_rt']/1000,
             worker['rss']/1024/1024, worker['vsz']/1024/1024,
             worker['tx'], worker['running_time']/1000
         ))
@@ -72,6 +104,8 @@ while True:
     screen.refresh()
 
     s.close()
-    time.sleep(freq)
+    if screen.getch() == ord('q'):
+        game_over()
+        break
 
 
