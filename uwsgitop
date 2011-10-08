@@ -38,7 +38,7 @@ if ':' in addr:
 
 freq = 3
 try:
-    freg = int(sys.argv[2])
+    freq = int(sys.argv[2])
 except:
     pass
 
