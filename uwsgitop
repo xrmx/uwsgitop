@@ -79,8 +79,6 @@ while True:
 
     dd = json.loads(js)
 
-    tot = sum( [worker['requests'] for worker in dd['workers']] )
-    tx = sum( [worker['tx'] for worker in dd['workers']] )
 
     
     uversion = ''
@@ -89,18 +87,49 @@ while True:
 
     if not 'listen_queue' in dd:
         dd['listen_queue'] = 0 
-    screen.addstr(0, 0, "uwsgi%s@%s - %s - req: %d - lq: %d - tx: %d" % (uversion, socket.gethostname(), time.ctime(), tot, dd['listen_queue'], tx))
-    screen.addstr(1, 0, "\tWID\t%\tPID\tREQ\tEXC\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRT\t", curses.A_REVERSE)
-    pos = 2
 
-    dd['workers'].sort(reqcount)
-    for worker in dd['workers']:
-        screen.addstr(pos, 0, "\t%d\t%.2f\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d\t%d" % (
-            worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], worker['status'], worker['avg_rt']/1000,
-            worker['rss']/1024/1024, worker['vsz']/1024/1024,
-            worker['tx'], worker['running_time']/1000
-        ))
-        pos += 1
+    cwd = ""
+    if 'cwd' in dd:
+        cwd = "- cwd: %s" % dd['cwd'] 
+
+    uid = ""
+    if 'uid' in dd:
+        uid = "- uid: %d" % dd['uid'] 
+
+    gid = ""
+    if 'gid' in dd:
+        gid = "- gid: %d" % dd['gid'] 
+
+    screen.addstr(1, 0, "node: %s %s %s %s" % (socket.gethostname(), cwd, uid, gid))
+
+    if 'vassals' in dd:
+        screen.addstr(0, 0, "uwsgi%s - %s - emperor: %s - tyrant: %d" % (uversion, time.ctime(), dd['emperor'], dd['emperor_tyrant']))
+        vassal_spaces = max([len(v['id']) for v in dd['vassals']])
+        screen.addstr(2, 0, " VASSAL%s\tPID\t" % (' ' * (vassal_spaces-6)), curses.A_REVERSE)
+        pos = 3
+        for vassal in dd['vassals']:
+            screen.addstr(pos, 0, " %s\t%d" % (vassal['id'].ljust(vassal_spaces), vassal['pid']))
+            pos += 1
+    
+    elif 'workers' in dd:
+        tot = sum( [worker['requests'] for worker in dd['workers']] )
+        tx = sum( [worker['tx'] for worker in dd['workers']] )
+        screen.addstr(0, 0, "uwsgi%s - %s - req: %d - lq: %d - tx: %d" % (uversion, time.ctime(), tot, dd['listen_queue'], tx))
+        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRT\t", curses.A_REVERSE)
+        pos = 3
+
+        dd['workers'].sort(reqcount)
+        for worker in dd['workers']:
+            sigs = 0
+            if 'signals' in worker:
+                sigs = worker['signals']
+            screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d\t%d" % (
+                worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'], worker['avg_rt']/1000,
+                worker['rss']/1024/1024, worker['vsz']/1024/1024,
+                worker['tx'], worker['running_time']/1000
+            ))
+            pos += 1
+
     screen.refresh()
 
     s.close()
