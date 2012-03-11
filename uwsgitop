@@ -43,6 +43,18 @@ except:
     pass
 
 screen = curses.initscr()
+curses.start_color()
+
+# busy
+curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+# cheap
+curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+# pause
+curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
+# sig
+curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+
+
 screen.timeout(freq*1000)
 atexit.register(game_over)
 
@@ -100,7 +112,11 @@ while True:
     if 'gid' in dd:
         gid = "- gid: %d" % dd['gid'] 
 
-    screen.addstr(1, 0, "node: %s %s %s %s" % (socket.gethostname(), cwd, uid, gid))
+    masterpid = ""
+    if 'pid' in dd:
+        masterpid = "- masterpid: %d" % dd['pid'] 
+
+    screen.addstr(1, 0, "node: %s %s %s %s %s" % (socket.gethostname(), cwd, uid, gid, masterpid))
 
     if 'vassals' in dd:
         screen.addstr(0, 0, "uwsgi%s - %s - emperor: %s - tyrant: %d" % (uversion, time.ctime(), dd['emperor'], dd['emperor_tyrant']))
@@ -115,19 +131,40 @@ while True:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
         tx = sum( [worker['tx'] for worker in dd['workers']] )
         screen.addstr(0, 0, "uwsgi%s - %s - req: %d - lq: %d - tx: %d" % (uversion, time.ctime(), tot, dd['listen_queue'], tx))
-        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRT\t", curses.A_REVERSE)
+        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
         pos = 3
 
         dd['workers'].sort(reqcount)
         for worker in dd['workers']:
             sigs = 0
+            wtx = worker['tx']
+            if wtx > 9999999:
+                wtx = "%sM" % str(wtx / (1024*1024))
+            else:
+                wtx = str(wtx)
+
+            wrunt = worker['running_time']/1000
+            if wrunt > 9999999:
+                wrunt = "%sm" % str(wrunt / (1000*60))
+            else:
+                wrunt = str(wrunt)
+                
+            color = curses.color_pair(0)
             if 'signals' in worker:
                 sigs = worker['signals']
-            screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%d\t%d\t%d\t%d" % (
-                worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'], worker['avg_rt']/1000,
-                worker['rss']/1024/1024, worker['vsz']/1024/1024,
-                worker['tx'], worker['running_time']/1000
-            ))
+            if worker['status'] == 'busy':
+                color = curses.color_pair(1)
+            if worker['status'] == 'cheap':
+                color = curses.color_pair(2)
+            if worker['status'] == 'pause':
+                color = curses.color_pair(3)
+            if worker['status'].startswith('sig'):
+                color = curses.color_pair(4)
+            screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%dM\t%dM\t%s\t%s" % (
+                worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
+                worker['avg_rt']/1000, worker['rss']/1024/1024, worker['vsz']/1024/1024,
+                wtx, wrunt
+            ), color)
             pos += 1
 
     screen.refresh()
