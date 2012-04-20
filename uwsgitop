@@ -25,10 +25,6 @@ limit = options.limit
 batch = options.batch
 iteration = 0
 
-if not exists(addr):
-    print '%s : No such file or directory' % addr
-    sys.exit(1)
-
 need_reset = True
 
 def game_over():
@@ -50,6 +46,9 @@ if ':' in addr:
     sfamily = socket.AF_INET
     addr_parts = addr.split(':')
     addr_tuple = (addr_parts[0], int(addr_parts[1]))
+elif not exists(addr):
+    print '%s : No such file or directory' % addr
+    sys.exit(1)
 
 if not batch:
     screen = curses.initscr()
@@ -109,19 +108,19 @@ while True:
 
     cwd = ""
     if 'cwd' in dd:
-        cwd = "- cwd: %s" % dd['cwd'] 
+        cwd = "- cwd: %s" % dd['cwd']
 
     uid = ""
     if 'uid' in dd:
-        uid = "- uid: %d" % dd['uid'] 
+        uid = "- uid: %d" % dd['uid']
 
     gid = ""
     if 'gid' in dd:
-        gid = "- gid: %d" % dd['gid'] 
+        gid = "- gid: %d" % dd['gid']
 
     masterpid = ""
     if 'pid' in dd:
-        masterpid = "- masterpid: %d" % dd['pid'] 
+        masterpid = "- masterpid: %d" % dd['pid']
 
     node_line = "node: %s %s %s %s %s" % (socket.gethostname(), cwd, uid, gid, masterpid)
     if not batch:
