@@ -1,4 +1,4 @@
-#!python
+#!/usr/bin/python
 
 import socket
 import simplejson as json
@@ -7,6 +7,23 @@ import time
 import atexit
 import sys
 import traceback
+import argparse
+from os.path import exists
+
+parser = argparse.ArgumentParser(description='The uWSGI top-like tool')
+parser = argparse.ArgumentParser(add_help=True)
+parser = argparse.ArgumentParser(version='0.7')
+parser.add_argument('-d', action="store", dest="delay", type=int, default=3, help="refresh delay")
+parser.add_argument('-n', action="store", dest="limit", type=int, default=0, help="number of iterations")
+parser.add_argument('-b', action="store_true", dest="batch", default=False, help="batch mode, implies no color")
+parser.add_argument('socket', help="path to the uWSGI stats socket")
+
+options = parser.parse_args()
+freq = options.delay
+addr = options.socket
+limit = options.limit
+batch = options.batch
+iteration = 0
 
 need_reset = True
 
@@ -23,43 +40,33 @@ def exc_hook(type, value, tb):
 
 sys.excepthook = exc_hook
 
-argc = len(sys.argv)
-
-if argc < 2:
-    raise Exception("You have to specify the uWSGI stats socket")
-
-addr = sys.argv[1]
 sfamily = socket.AF_UNIX
 addr_tuple = addr
 if ':' in addr:
     sfamily = socket.AF_INET
     addr_parts = addr.split(':')
     addr_tuple = (addr_parts[0], int(addr_parts[1]))
+elif not exists(addr):
+    print '%s : No such file or directory' % addr
+    sys.exit(1)
 
-freq = 3
-try:
-    freq = int(sys.argv[2])
-except:
-    pass
+if not batch:
+    screen = curses.initscr()
+    curses.start_color()
+    # busy
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    # cheap
+    curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    # pause
+    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
+    # sig
+    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
-screen = curses.initscr()
-curses.start_color()
+    screen.timeout(freq*1000)
+    atexit.register(game_over)
 
-# busy
-curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-# cheap
-curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-# pause
-curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
-# sig
-curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-
-
-screen.timeout(freq*1000)
-atexit.register(game_over)
-
-curses.curs_set(0)
-screen.clear()
+    curses.curs_set(0)
+    screen.clear()
 
 def reqcount(a, b):
     if a['requests'] > b['requests']:
@@ -76,6 +83,7 @@ def calc_percent(tot, req):
 while True:
 
     js = ''
+    iteration += 1
 
     try:
         s = socket.socket(sfamily, socket.SOCK_STREAM)
@@ -91,8 +99,6 @@ while True:
 
     dd = json.loads(js)
 
-
-    
     uversion = ''
     if 'version' in dd:
         uversion = '-' + dd['version']
@@ -102,37 +108,59 @@ while True:
 
     cwd = ""
     if 'cwd' in dd:
-        cwd = "- cwd: %s" % dd['cwd'] 
+        cwd = "- cwd: %s" % dd['cwd']
 
     uid = ""
     if 'uid' in dd:
-        uid = "- uid: %d" % dd['uid'] 
+        uid = "- uid: %d" % dd['uid']
 
     gid = ""
     if 'gid' in dd:
-        gid = "- gid: %d" % dd['gid'] 
+        gid = "- gid: %d" % dd['gid']
 
     masterpid = ""
     if 'pid' in dd:
-        masterpid = "- masterpid: %d" % dd['pid'] 
+        masterpid = "- masterpid: %d" % dd['pid']
 
-    screen.addstr(1, 0, "node: %s %s %s %s %s" % (socket.gethostname(), cwd, uid, gid, masterpid))
+    node_line = "node: %s %s %s %s %s" % (socket.gethostname(), cwd, uid, gid, masterpid)
+    if not batch:
+        screen.addstr(1, 0, node_line)
+    else:
+        print node_line
 
     if 'vassals' in dd:
-        screen.addstr(0, 0, "uwsgi%s - %s - emperor: %s - tyrant: %d" % (uversion, time.ctime(), dd['emperor'], dd['emperor_tyrant']))
+        vassal_header = "uwsgi%s - %s - emperor: %s - tyrant: %d" % (uversion, time.ctime(), dd['emperor'], dd['emperor_tyrant'])
+        if not batch:
+            screen.addstr(0, 0, vassal_header)
+        else:
+            print vassal_header
         vassal_spaces = max([len(v['id']) for v in dd['vassals']])
-        screen.addstr(2, 0, " VASSAL%s\tPID\t" % (' ' * (vassal_spaces-6)), curses.A_REVERSE)
-        pos = 3
+        vassal_legend = " VASSAL%s\tPID\t" % (' ' * (vassal_spaces-6))
+        if not batch:
+            screen.addstr(2, 0, vassal_legend, curses.A_REVERSE)
+            pos = 3
+        else:
+            print vassal_legend
         for vassal in dd['vassals']:
-            screen.addstr(pos, 0, " %s\t%d" % (vassal['id'].ljust(vassal_spaces), vassal['pid']))
-            pos += 1
-    
+            vassal_line = " %s\t%d" % (vassal['id'].ljust(vassal_spaces), vassal['pid'])
+            if not batch:
+                screen.addstr(pos, 0, vassal_line)
+                pos += 1
+            else:
+                print vassal_line
+
     elif 'workers' in dd:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
         tx = sum( [worker['tx'] for worker in dd['workers']] )
-        screen.addstr(0, 0, "uwsgi%s - %s - req: %d - lq: %d - tx: %d" % (uversion, time.ctime(), tot, dd['listen_queue'], tx))
-        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
-        pos = 3
+        header = "uwsgi%s - %s - req: %d - lq: %d - tx: %d" % (uversion, time.ctime(), tot, dd['listen_queue'], tx)
+        legend = " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t"
+        if not batch:
+            screen.addstr(0, 0, header)
+            screen.addstr(2, 0, legend, curses.A_REVERSE)
+            pos = 3
+        else:
+            print header
+            print legend
 
         dd['workers'].sort(reqcount)
         for worker in dd['workers']:
@@ -148,30 +176,33 @@ while True:
                 wrunt = "%sm" % str(wrunt / (1000*60))
             else:
                 wrunt = str(wrunt)
-                
-            color = curses.color_pair(0)
-            if 'signals' in worker:
-                sigs = worker['signals']
-            if worker['status'] == 'busy':
-                color = curses.color_pair(1)
-            if worker['status'] == 'cheap':
-                color = curses.color_pair(2)
-            if worker['status'] == 'pause':
-                color = curses.color_pair(3)
-            if worker['status'].startswith('sig'):
-                color = curses.color_pair(4)
-            screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%dM\t%dM\t%s\t%s" % (
-                worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
-                worker['avg_rt']/1000, worker['rss']/1024/1024, worker['vsz']/1024/1024,
-                wtx, wrunt
-            ), color)
-            pos += 1
 
-    screen.refresh()
+            worker_line = " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%dM\t%dM\t%s\t%s" % (
+                worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
+                    worker['avg_rt']/1000, worker['rss']/1024/1024, worker['vsz']/1024/1024,
+                    wtx, wrunt
+                )
+            if not batch:
+                color = curses.color_pair(0)
+                if 'signals' in worker:
+                    sigs = worker['signals']
+                if worker['status'] == 'busy':
+                    color = curses.color_pair(1)
+                if worker['status'] == 'cheap':
+                    color = curses.color_pair(2)
+                if worker['status'] == 'pause':
+                    color = curses.color_pair(3)
+                if worker['status'].startswith('sig'):
+                    color = curses.color_pair(4)
+                screen.addstr(pos, 0, worker_line, color)
+                pos += 1
+
+                screen.refresh()
+            else:
+                print worker_line
 
     s.close()
-    if screen.getch() == ord('q'):
+    if batch : break
+    if screen.getch() == ord('q') or iteration == limit:
         game_over()
         break
-
-
