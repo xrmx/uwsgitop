@@ -58,7 +58,10 @@ curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 screen.timeout(freq*1000)
 atexit.register(game_over)
 
-curses.curs_set(0)
+try:
+    curses.curs_set(0)
+except:
+    pass
 screen.clear()
 
 def reqcount(a, b):
