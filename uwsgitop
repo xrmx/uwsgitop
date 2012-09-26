@@ -163,11 +163,14 @@ while True:
                 color = curses.color_pair(3)
             if worker['status'].startswith('sig'):
                 color = curses.color_pair(4)
-            screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%dM\t%dM\t%s\t%s" % (
-                worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
-                worker['avg_rt']/1000, worker['rss']/1024/1024, worker['vsz']/1024/1024,
-                wtx, wrunt
-            ), color)
+            try:
+                screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%dM\t%dM\t%s\t%s" % (
+                    worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
+                    worker['avg_rt']/1000, worker['rss']/1024/1024, worker['vsz']/1024/1024,
+                    wtx, wrunt
+                ), color)
+            except:
+                pass
             pos += 1
 
     screen.refresh()
