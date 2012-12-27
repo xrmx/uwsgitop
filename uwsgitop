@@ -1,7 +1,10 @@
 #!python
 
 import socket
-import simplejson as json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import curses
 import time
 import atexit
