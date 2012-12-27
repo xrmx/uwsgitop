@@ -88,7 +88,7 @@ while True:
             data = s.recv(4096)
             if len(data) < 1:
                 break
-            js += data
+            js += data.decode('iso8859-1')
     except:
         raise Exception("unable to get uWSGI statistics")
 
