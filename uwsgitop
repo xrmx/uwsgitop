@@ -12,6 +12,7 @@ import sys
 import traceback
 
 need_reset = True
+screen = None
 
 def game_over():
     global need_reset
@@ -19,9 +20,10 @@ def game_over():
         curses.endwin()
 
 def exc_hook(type, value, tb):
-    global need_reset
+    global need_reset, screen
     need_reset = False
-    curses.endwin()
+    if screen:
+        curses.endwin()
     traceback.print_exception(type, value, tb)
 
 sys.excepthook = exc_hook
