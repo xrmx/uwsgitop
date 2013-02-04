@@ -14,6 +14,18 @@ import traceback
 need_reset = True
 screen = None
 
+def human_size(n):
+    # G
+    if n >= (1024*1024*1024): 
+        return "%.1fG" % (n/(1024*1024*1024))
+    # M
+    if n >= (1024*1024):
+        return "%.1fM" % (n/(1024*1024))
+    # K
+    if n >= 1024:
+        return "%.1fK" % (n/1024)
+    return "%d" % n
+
 def game_over():
     global need_reset
     if need_reset:
@@ -83,6 +95,8 @@ def calc_percent(tot, req):
 
 while True:
 
+    screen.clear()
+
     js = ''
 
     try:
@@ -137,19 +151,15 @@ while True:
     
     elif 'workers' in dd:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
-        tx = sum( [worker['tx'] for worker in dd['workers']] )
-        screen.addstr(0, 0, "uwsgi%s - %s - req: %d - lq: %d - tx: %d" % (uversion, time.ctime(), tot, dd['listen_queue'], tx))
+        tx = human_size(sum( [worker['tx'] for worker in dd['workers']] ))
+        screen.addstr(0, 0, "uwsgi%s - %s - req: %d - lq: %d - tx: %s" % (uversion, time.ctime(), tot, dd['listen_queue'], tx))
         screen.addstr(2, 0, " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
         pos = 3
 
         dd['workers'].sort(reqcount)
         for worker in dd['workers']:
             sigs = 0
-            wtx = worker['tx']
-            if wtx > 9999999:
-                wtx = "%sM" % str(wtx / (1024*1024))
-            else:
-                wtx = str(wtx)
+            wtx = human_size(worker['tx'])
 
             wrunt = worker['running_time']/1000
             if wrunt > 9999999:
@@ -169,9 +179,9 @@ while True:
             if worker['status'].startswith('sig'):
                 color = curses.color_pair(4)
             try:
-                screen.addstr(pos, 0, " %d\t%.2f\t%d\t%d\t%d\t%d\t%s\t%dms\t%dM\t%dM\t%s\t%s" % (
+                screen.addstr(pos, 0, " %d\t%.1f\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
                     worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
-                    worker['avg_rt']/1000, worker['rss']/1024/1024, worker['vsz']/1024/1024,
+                    worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
                     wtx, wrunt
                 ), color)
             except:
