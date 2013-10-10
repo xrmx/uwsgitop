@@ -10,6 +10,7 @@ import time
 import atexit
 import sys
 import traceback
+from collections import defaultdict
 
 need_reset = True
 screen = None
@@ -93,6 +94,10 @@ def calc_percent(tot, req):
         return 0.0
     return (100 *float(req))/float(tot)
 
+# RPS calculation
+last_tot_time = time.time()
+last_reqnumber_per_worker = defaultdict(int)
+
 while True:
 
     screen.clear()
@@ -151,9 +156,23 @@ while True:
     
     elif 'workers' in dd:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
+
+        rps_per_worker = {}
+        dt = time.time() - last_tot_time
+        total_rps = 0
+        for worker in dd['workers']:
+            wid = worker['id']
+            curr_reqnumber = worker['requests']
+            last_reqnumber = last_reqnumber_per_worker[wid]
+            rps_per_worker[wid] = (curr_reqnumber - last_reqnumber) / dt
+            total_rps += rps_per_worker[wid]
+            last_reqnumber_per_worker[wid] = curr_reqnumber
+
+        last_tot_time = time.time()
+
         tx = human_size(sum( [worker['tx'] for worker in dd['workers']] ))
-        screen.addstr(0, 0, "uwsgi%s - %s - req: %d - lq: %d - tx: %s" % (uversion, time.ctime(), tot, dd['listen_queue'], tx))
-        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
+        screen.addstr(0, 0, "uwsgi%s - %s - req: %d - RPS: %d - lq: %d - tx: %s" % (uversion, time.ctime(), tot, int(round(total_rps)), dd['listen_queue'], tx))
+        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tRPS\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
         pos = 3
 
         dd['workers'].sort(reqcount)
@@ -178,9 +197,12 @@ while True:
                 color = curses.color_pair(3)
             if worker['status'].startswith('sig'):
                 color = curses.color_pair(4)
+
+            rps = int(round(rps_per_worker[worker['id']]))
+
             try:
-                screen.addstr(pos, 0, " %d\t%.1f\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
-                    worker['id'], calc_percent(tot, worker['requests']), worker['pid'], worker['requests'], worker['exceptions'], sigs, worker['status'],
+                screen.addstr(pos, 0, " %d\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
+                    worker['id'], calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
                     worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
                     wtx, wrunt
                 ), color)
