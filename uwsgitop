@@ -63,15 +63,18 @@ except:
 screen = curses.initscr()
 curses.start_color()
 
-# busy
-curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-# cheap
-curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-# pause
-curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
-# sig
-curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-
+try:
+    # busy
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    # cheap
+    curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    # pause
+    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
+    # sig
+    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+except curses.error:
+    # the terminal doesn't support colors
+    pass
 
 screen.timeout(freq*1000)
 atexit.register(game_over)
