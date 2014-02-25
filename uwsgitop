@@ -93,9 +93,31 @@ def calc_percent(tot, req):
         return 0.0
     return (100 *float(req))/float(tot)
 
+def merge_worker_with_cores(workers, rps_per_worker, cores, rps_per_core):
+    workers_by_id = dict([(w['id'], w) for w in workers])
+    new_workers = []
+    for wid, w_cores in cores.items():
+        for core in w_cores:
+            cid = core['id']
+            data = dict(workers_by_id.get(wid))
+            data.update(core)
+            if data['status'] == 'busy' and not core['in_request']:
+                data['status'] = '-'
+            new_wid = "{0}:{1}".format(wid, cid)
+            data['id'] = new_wid
+            rps_per_worker[new_wid] = rps_per_core[wid, cid]
+            new_workers.append(data)
+    workers[:] = new_workers
+
 # RPS calculation
 last_tot_time = time.time()
 last_reqnumber_per_worker = defaultdict(int)
+last_reqnumber_per_core = defaultdict(int)
+
+# 0 - do not show async core
+# 1 - merge core statistics with worker statistics
+# 2 - display active cores under workers
+async_mode = 0
 
 while True:
 
@@ -157,6 +179,8 @@ while True:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
 
         rps_per_worker = {}
+        rps_per_core = {}
+        cores = defaultdict(list)
         dt = time.time() - last_tot_time
         total_rps = 0
         for worker in dd['workers']:
@@ -166,8 +190,25 @@ while True:
             rps_per_worker[wid] = (curr_reqnumber - last_reqnumber) / dt
             total_rps += rps_per_worker[wid]
             last_reqnumber_per_worker[wid] = curr_reqnumber
+            if not async_mode:
+                continue
+            for core in worker.get('cores', []):
+                if not core['requests']:
+                    # ignore unused cores
+                    continue
+                wcid = (wid, core['id'])
+                curr_reqnumber = core['requests']
+                last_reqnumber = last_reqnumber_per_core[wcid]
+                rps_per_core[wcid] = (curr_reqnumber - last_reqnumber) / dt
+                last_reqnumber_per_core[wcid] = curr_reqnumber
+                cores[wid].append(core)
+            cores[wid].sort(key=reqcount)
 
         last_tot_time = time.time()
+
+        if async_mode == 1:
+            merge_worker_with_cores(dd['workers'], rps_per_worker,
+                                    cores, rps_per_core)
 
         tx = human_size(sum( [worker['tx'] for worker in dd['workers']] ))
         screen.addstr(0, 0, "uwsgi%s - %s - req: %d - RPS: %d - lq: %d - tx: %s" % (uversion, time.ctime(), tot, int(round(total_rps)), dd['listen_queue'], tx))
@@ -197,23 +238,47 @@ while True:
             if worker['status'].startswith('sig'):
                 color = curses.color_pair(4)
 
-            rps = int(round(rps_per_worker[worker['id']]))
+            wid = worker['id']
+
+            rps = int(round(rps_per_worker[wid]))
 
             try:
-                screen.addstr(pos, 0, " %d\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
-                    worker['id'], calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
+                screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
+                    wid, calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
                     worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
                     wtx, wrunt
                 ), color)
             except:
                 pass
             pos += 1
+            if async_mode != 2:
+                continue
+            for core in cores[wid]:
+                color = curses.color_pair(0)
+                if core['in_request']:
+                    status = 'busy'
+                    color = curses.color_pair(1)
+                else:
+                    status = 'idle'
+
+                cid = core['id']
+                rps = int(round(rps_per_core[wid, cid]))
+                try:
+                    screen.addstr(pos, 0, "  :%s\t%.1f\t-\t%d\t%d\t-\t-\t%s\t-\t-\t-\t-\t-" % (
+                        cid, calc_percent(tot, core['requests']),  core['requests'], rps, status,
+                    ), color)
+                except:
+                    pass
+                pos += 1
 
     screen.refresh()
 
     s.close()
-    if screen.getch() == ord('q'):
+    ch = screen.getch()
+    if ch == ord('q'):
         game_over()
         break
+    elif ch == ord('a'):
+        async_mode = (async_mode + 1) % 3
 
 
