@@ -137,7 +137,7 @@ while True:
     except:
         raise Exception("unable to get uWSGI statistics")
 
-    dd = json.loads(js)
+    dd = json.loads(js.replace('\\', '\\\\'))
 
 
     
