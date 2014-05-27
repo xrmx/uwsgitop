@@ -11,6 +11,7 @@ import atexit
 import sys
 import traceback
 from collections import defaultdict
+import re
 
 need_reset = True
 screen = None
@@ -137,6 +138,7 @@ while True:
     except:
         raise Exception("unable to get uWSGI statistics")
 
+    js = re.sub(r'"HTTP_COOKIE=[^"]*"', '""', js)
     dd = json.loads(js)
 
 
