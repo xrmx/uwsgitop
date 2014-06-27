@@ -11,6 +11,7 @@ import atexit
 import sys
 import traceback
 from collections import defaultdict
+import errno
 
 need_reset = True
 screen = None
@@ -134,6 +135,10 @@ while True:
             if len(data) < 1:
                 break
             js += data.decode('utf8')
+    except IOError, e:
+        if e.errno != errno.EINTR:
+            raise
+        continue
     except:
         raise Exception("unable to get uWSGI statistics")
 
