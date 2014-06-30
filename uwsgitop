@@ -296,13 +296,11 @@ while True:
         scroll_shift = 0
     elif ch == curses.KEY_PPAGE or ch == ord('n'):
         scroll_shift += screen_height / 2
-        #scroll_shift += 1
         if scroll_shift > 0:
             scroll_shift = 0
     elif ch == curses.KEY_NPAGE or ch == ord('m'):
         if count_entries > screen_height - 3:
             scroll_shift -= screen_height / 2
-            #scroll_shift -= 1
             if scroll_shift + count_entries + 3 < screen_height:
                 scroll_shift = -1 * (count_entries - screen_height + 3)
 
