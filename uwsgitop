@@ -220,7 +220,10 @@ while True:
         screen.addstr(2, 0, " WID\t%\tPID\tREQ\tRPS\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
         pos = 3
 
-        dd['workers'].sort(key=reqcount)
+        def order_by_rps(a, b):
+            return cmp(rps_per_worker[a['id']], rps_per_worker[b['id']])
+
+        dd['workers'].sort(cmp=order_by_rps, reverse=True)
         for worker in dd['workers']:
             sigs = 0
             wtx = human_size(worker['tx'])
