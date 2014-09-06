@@ -55,7 +55,7 @@ if ':' in addr:
     addr_parts = addr.split(':')
     addr_tuple = (addr_parts[0], int(addr_parts[1]))
 
-freq = 3
+freq = 1
 try:
     freq = int(sys.argv[2])
 except:
@@ -245,7 +245,7 @@ while True:
                 color = curses.color_pair(1)
             if worker['status'] == 'cheap':
                 color = curses.color_pair(2)
-            if worker['status'] == 'pause':
+            if worker['status'] == 'pause' or worker['rss'] == 0:
                 color = curses.color_pair(3)
             if worker['status'].startswith('sig'):
                 color = curses.color_pair(4)
