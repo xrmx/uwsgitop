@@ -77,7 +77,6 @@ except curses.error:
     # the terminal doesn't support colors
     pass
 
-screen.timeout(freq*1000)
 atexit.register(game_over)
 
 try:
@@ -119,8 +118,14 @@ last_reqnumber_per_core = defaultdict(int)
 # 1 - merge core statistics with worker statistics
 # 2 - display active cores under workers
 async_mode = 0
+fast_screen = False
 
 while True:
+
+    if fast_screen:
+        screen.timeout(100)
+    else:
+        screen.timeout(freq*1000)
 
     screen.clear()
 
@@ -217,10 +222,10 @@ while True:
 
         tx = human_size(sum( [worker['tx'] for worker in dd['workers']] ))
         screen.addstr(0, 0, "uwsgi%s - %s - req: %d - RPS: %d - lq: %d - tx: %s" % (uversion, time.ctime(), tot, int(round(total_rps)), dd['listen_queue'], tx))
-        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tRPS\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
+        screen.addstr(2, 0, " WID\t%\tPID\tREQ\tRPS\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tReSpwn\tHC\tRunT\tLastSpwn", curses.A_REVERSE)
         pos = 3
 
-        dd['workers'].sort(key=reqcount)
+        dd['workers'].sort(key=reqcount, reverse=True)
         for worker in dd['workers']:
             sigs = 0
             wtx = human_size(worker['tx'])
@@ -230,6 +235,8 @@ while True:
                 wrunt = "%sm" % str(wrunt / (1000*60))
             else:
                 wrunt = str(wrunt)
+
+            wlastspawn = time.strftime("%H:%M:%S", time.localtime(worker['last_spawn']))
                 
             color = curses.color_pair(0)
             if 'signals' in worker:
@@ -248,10 +255,10 @@ while True:
             rps = int(round(rps_per_worker[wid]))
 
             try:
-                screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
+                screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                     wid, calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
                     worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
-                    wtx, wrunt
+                    wtx, worker['respawn_count'], worker['harakiri_count'], wrunt, wlastspawn
                 ), color)
             except:
                 pass
@@ -285,5 +292,7 @@ while True:
         break
     elif ch == ord('a'):
         async_mode = (async_mode + 1) % 3
+    elif ch == ord('f'):
+        fast_screen = True
 
 
