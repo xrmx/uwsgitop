@@ -118,11 +118,11 @@ last_reqnumber_per_core = defaultdict(int)
 # 1 - merge core statistics with worker statistics
 # 2 - display active cores under workers
 async_mode = 0
-fast_screen = False
+fast_screen = 0
 
 while True:
 
-    if fast_screen:
+    if fast_screen == 1:
         screen.timeout(100)
     else:
         screen.timeout(freq*1000)
@@ -293,6 +293,6 @@ while True:
     elif ch == ord('a'):
         async_mode = (async_mode + 1) % 3
     elif ch == ord('f'):
-        fast_screen = True
+        fast_screen = (fast_screen + 1) % 2
 
 
