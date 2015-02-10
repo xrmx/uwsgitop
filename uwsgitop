@@ -31,12 +31,14 @@ def human_size(n):
 def game_over():
     global need_reset
     if need_reset:
+        curses.echo()
         curses.endwin()
 
 def exc_hook(type, value, tb):
     global need_reset, screen
     need_reset = False
     if screen:
+        curses.echo()
         curses.endwin()
     traceback.print_exception(type, value, tb)
 
@@ -62,6 +64,7 @@ except:
     pass
 
 screen = curses.initscr()
+curses.noecho()
 curses.start_color()
 
 try:
