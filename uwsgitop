@@ -31,12 +31,14 @@ def human_size(n):
 def game_over():
     global need_reset
     if need_reset:
+        curses.echo()
         curses.endwin()
 
 def exc_hook(type, value, tb):
     global need_reset, screen
     need_reset = False
     if screen:
+        curses.echo()
         curses.endwin()
     traceback.print_exception(type, value, tb)
 
@@ -62,19 +64,21 @@ except:
     pass
 
 screen = curses.initscr()
+curses.noecho()
 curses.start_color()
+curses.use_default_colors()
 
 try:
     # busy
-    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_GREEN, -1)
     # cheap
-    curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_MAGENTA, -1)
     # respawn
-    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_RED, -1)
     # sig
-    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_YELLOW, -1)
     # pause
-    curses.init_pair(5, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_BLUE, -1)
 except curses.error:
     # the terminal doesn't support colors
     pass
