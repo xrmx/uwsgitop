@@ -235,6 +235,7 @@ while True:
         for worker in dd['workers']:
             sigs = 0
             wtx = human_size(worker['tx'])
+            wlastspawn = "--:--:--"
 
             wrunt = worker['running_time']/1000
             if wrunt > 9999999:
@@ -242,7 +243,8 @@ while True:
             else:
                 wrunt = str(wrunt)
 
-            wlastspawn = time.strftime("%H:%M:%S", time.localtime(worker['last_spawn']))
+            if worker['last_spawn']:
+                wlastspawn = time.strftime("%H:%M:%S", time.localtime(worker['last_spawn']))
                 
             color = curses.color_pair(0)
             if 'signals' in worker:
