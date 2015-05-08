@@ -49,13 +49,29 @@ argc = len(sys.argv)
 if argc < 2:
     raise Exception("You have to specify the uWSGI stats socket")
 
-addr = sys.argv[1]
-sfamily = socket.AF_UNIX
-addr_tuple = addr
-if ':' in addr:
+def inet_addr(arg):
     sfamily = socket.AF_INET
-    addr_parts = addr.split(':')
-    addr_tuple = (addr_parts[0], int(addr_parts[1]))
+    host, port = arg.rsplit(':', 1)
+    addr = (host, int(port))
+    return sfamily, addr
+
+def unix_addr(arg):
+    sfamily = socket.AF_UNIX
+    addr = arg
+    return sfamily, addr
+
+def abstract_unix_addr(arg):
+    sfamily = socket.AF_UNIX
+    addr = '\0' + arg[1:]
+    return sfamily, addr
+
+addr = sys.argv[1]
+if ':' in addr:
+    sfamily, addr = inet_addr(addr)
+elif addr.startswith('@'):
+    sfamily, addr = abstract_unix_addr(addr)
+else:
+    sfamily, addr = unix_addr(addr)
 
 freq = 1
 try:
@@ -139,7 +155,7 @@ while True:
 
     try:
         s = socket.socket(sfamily, socket.SOCK_STREAM)
-        s.connect( addr_tuple )
+        s.connect( addr )
 
         while True:
             data = s.recv(4096)
