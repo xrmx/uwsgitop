@@ -199,13 +199,14 @@ while True:
 
     if 'vassals' in dd:
         screen.addstr(0, 0, "uwsgi%s - %s - emperor: %s - tyrant: %d" % (uversion, time.ctime(), dd['emperor'], dd['emperor_tyrant']))
-        vassal_spaces = max([len(v['id']) for v in dd['vassals']])
-        screen.addstr(2, 0, " VASSAL%s\tPID\t" % (' ' * (vassal_spaces-6)), curses.A_REVERSE)
-        pos = 3
-        for vassal in dd['vassals']:
-            screen.addstr(pos, 0, " %s\t%d" % (vassal['id'].ljust(vassal_spaces), vassal['pid']))
-            pos += 1
-    
+        if dd['vassals']:
+            vassal_spaces = max([len(v['id']) for v in dd['vassals']])
+            screen.addstr(2, 0, " VASSAL%s\tPID\t" % (' ' * (vassal_spaces-6)), curses.A_REVERSE)
+            pos = 3
+            for vassal in dd['vassals']:
+                screen.addstr(pos, 0, " %s\t%d" % (vassal['id'].ljust(vassal_spaces), vassal['pid']))
+                pos += 1
+
     elif 'workers' in dd:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
 
