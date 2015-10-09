@@ -53,31 +53,30 @@ def inet_addr(arg):
     sfamily = socket.AF_INET
     host, port = arg.rsplit(':', 1)
     addr = (host, int(port))
-    return sfamily, addr
+    return sfamily, addr, host
 
 def unix_addr(arg):
     sfamily = socket.AF_UNIX
     addr = arg
-    return sfamily, addr
+    return sfamily, addr, socket.gethostname()
 
 def abstract_unix_addr(arg):
     sfamily = socket.AF_UNIX
     addr = '\0' + arg[1:]
-    return sfamily, addr
+    return sfamily, addr, socket.gethostname()
 
 addr = sys.argv[1]
 if ':' in addr:
-    sfamily, addr = inet_addr(addr)
+    sfamily, addr, host = inet_addr(addr)
 elif addr.startswith('@'):
-    sfamily, addr = abstract_unix_addr(addr)
+    sfamily, addr, host = abstract_unix_addr(addr)
 else:
-    sfamily, addr = unix_addr(addr)
+    sfamily, addr, host = unix_addr(addr)
 
-freq = 1
 try:
     freq = int(sys.argv[2])
-except:
-    pass
+except IndexError:
+    freq = 1
 
 screen = curses.initscr()
 curses.noecho()
@@ -196,7 +195,7 @@ while True:
     if 'pid' in dd:
         masterpid = "- masterpid: %d" % dd['pid'] 
 
-    screen.addstr(1, 0, "node: %s %s %s %s %s" % (socket.gethostname(), cwd, uid, gid, masterpid))
+    screen.addstr(1, 0, "node: %s %s %s %s %s" % (host, cwd, uid, gid, masterpid))
 
     if 'vassals' in dd:
         screen.addstr(0, 0, "uwsgi%s - %s - emperor: %s - tyrant: %d" % (uversion, time.ctime(), dd['emperor'], dd['emperor_tyrant']))
