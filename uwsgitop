@@ -253,11 +253,11 @@ while True:
 
             if pos >= 3:
                 try:
-                screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
-                    wid, calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
-                    worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
-                    wtx, wrunt
-                ), color)
+                    screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
+                        wid, calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
+                        worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
+                        wtx, wrunt
+                    ), color)
                 except:
                     pass
             pos += 1
