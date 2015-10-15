@@ -17,7 +17,7 @@ screen = None
 
 def human_size(n):
     # G
-    if n >= (1024*1024*1024):
+    if n >= (1024*1024*1024): 
         return "%.1fG" % (n/(1024*1024*1024))
     # M
     if n >= (1024*1024):
@@ -118,7 +118,6 @@ last_reqnumber_per_core = defaultdict(int)
 # 1 - merge core statistics with worker statistics
 # 2 - display active cores under workers
 async_mode = 0
-
 scroll_shift = 0
 
 while True:
@@ -144,7 +143,7 @@ while True:
     dd = json.loads(js)
 
 
-
+    
     uversion = ''
     if 'version' in dd:
         uversion = '-' + dd['version']
@@ -178,7 +177,7 @@ while True:
         for vassal in dd['vassals']:
             screen.addstr(pos, 0, " %s\t%d" % (vassal['id'].ljust(vassal_spaces), vassal['pid']))
             pos += 1
-
+    
     elif 'workers' in dd:
         tot = sum( [worker['requests'] for worker in dd['workers']] )
 
@@ -234,7 +233,7 @@ while True:
                 wrunt = "%sm" % str(wrunt / (1000*60))
             else:
                 wrunt = str(wrunt)
-
+                
             color = curses.color_pair(0)
             if 'signals' in worker:
                 sigs = worker['signals']
@@ -286,7 +285,6 @@ while True:
 
     s.close()
     ch = screen.getch()
-
     if ch == ord('q'):
         game_over()
         break
