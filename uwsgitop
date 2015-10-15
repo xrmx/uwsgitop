@@ -222,7 +222,6 @@ while True:
         tx = human_size(sum( [worker['tx'] for worker in dd['workers']] ))
         screen.addstr(0, 0, "uwsgi%s - %s - req: %d - RPS: %d - lq: %d - tx: %s" % (uversion, time.ctime(), tot, int(round(total_rps)), dd['listen_queue'], tx))
         screen.addstr(2, 0, " WID\t%\tPID\tREQ\tRPS\tEXC\tSIG\tSTATUS\tAVG\tRSS\tVSZ\tTX\tRunT\t", curses.A_REVERSE)
-
         pos = 3 + scroll_shift
 
         dd['workers'].sort(key=reqcount)
@@ -252,15 +251,15 @@ while True:
 
             rps = int(round(rps_per_worker[wid]))
 
-            try:
-                if pos >= 3:
-                    screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
-                        wid, calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
-                        worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
-                        wtx, wrunt
-                    ), color)
-            except:
-                pass
+            if pos >= 3:
+                try:
+                screen.addstr(pos, 0, " %s\t%.1f\t%d\t%d\t%d\t%d\t%d\t%s\t%dms\t%s\t%s\t%s\t%s" % (
+                    wid, calc_percent(tot, worker['requests']),  worker['pid'], worker['requests'], rps, worker['exceptions'], sigs, worker['status'],
+                    worker['avg_rt']/1000, human_size(worker['rss']), human_size(worker['vsz']),
+                    wtx, wrunt
+                ), color)
+                except:
+                    pass
             pos += 1
             if async_mode != 2:
                 continue
@@ -274,13 +273,13 @@ while True:
 
                 cid = core['id']
                 rps = int(round(rps_per_core[wid, cid]))
-                try:
-                    if pos >= 3:
+                if pos >= 3:
+                    try:
                         screen.addstr(pos, 0, "  :%s\t%.1f\t-\t%d\t%d\t-\t-\t%s\t-\t-\t-\t-\t-" % (
                             cid, calc_percent(tot, core['requests']), core['requests'], rps, status
                         ), color)
-                except:
-                    pass
+                    except:
+                        pass
                 pos += 1
 
     screen.refresh()
