@@ -59,4 +59,22 @@ and to quit, press ``q``.
 | RunT   | How long worker is working                                    |
 +--------+---------------------------------------------------------------+
 
+Colors
+------
+
+Lines would be displayed in different colors:
+
+- default console text color, if the worker is idle
+- ``green``, if the worker is busy
+- ``magenta``, if the worker is in ``cheap`` mode
+- ``yellow``, if the worker is handling an uwsgi signal
+- ``blue``, if the worker is ``suspended``
+
+
+If ``memory-report`` is not enabled in your uwsgi configuration you'll see everything ``red``.
+Knowing how much memory resources are consuming your uwsgi processes is useful, please enable it.
+
+Further Reading
+---------------
+
 For more info on uWSGI Stats Server see http://projects.unbit.it/uwsgi/wiki/StatsServer
