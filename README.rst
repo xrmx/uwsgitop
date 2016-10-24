@@ -71,8 +71,8 @@ Lines would be displayed in different colors:
 - ``blue``, if the worker is ``suspended``
 
 
-If ``memory-report`` is not enabled in your uwsgi configuration you'll see everything ``red``.
-Knowing how much memory resources are consuming your uwsgi processes is useful, please enable it.
+Remember to enable ``memory-report`` in your uwsgi configuration to see how
+much memory resources your uwsgi processes are consuming.
 
 Further Reading
 ---------------
