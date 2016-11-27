@@ -161,7 +161,7 @@ while True:
             data = s.recv(4096)
             if len(data) < 1:
                 break
-            js += data.decode('utf8')
+            js += data.decode('utf8', 'ignore')
     except IOError as e:
         if e.errno != errno.EINTR:
             raise
