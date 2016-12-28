@@ -9,13 +9,19 @@ a valid socket address, for example::
 
     uwsgi --module myapp --socket :3030 --stats /tmp/stats.socket
 
-Note: If you want the stats served over HTTP you will need to also add
-the ``stats-http`` option.
-
 To start monitoring your application with ``uwsgitop`` call it with
 the socket address like so::
 
     uwsgitop /tmp/stats.socket
+
+If you want the stats served over HTTP you will need to add
+the ``stats-http`` option in uWSGI::
+
+    uwsgi --module myapp --http :3030 --stats :3031 --stats-http
+
+You'll now need to call uwsgitop as::
+
+    uwsgitop http://127.0.0.1:3031
 
 Installation
 ------------

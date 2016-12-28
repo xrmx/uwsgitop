@@ -12,5 +12,8 @@ setup(
     license='MIT',
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     scripts=['uwsgitop'],
-    install_requires = ['simplejson']
+    install_requires = [
+        'simplejson',
+        'argparse',
+    ]
 )

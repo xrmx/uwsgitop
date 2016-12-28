@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+import argparse
+try:
+    import urllib2
+except ImportError:
+    import urllib.request as urllib2
 import socket
 try:
     import simplejson as json
@@ -15,6 +20,7 @@ import errno
 
 need_reset = True
 screen = None
+http_stats = False
 
 
 def human_size(n):
@@ -45,10 +51,14 @@ def exc_hook(type, value, tb):
 
 sys.excepthook = exc_hook
 
-argc = len(sys.argv)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--frequency', type=int, default=1, help='Refresh frequency in seconds')
+    parser.add_argument('address', help='uWSGI stats socket or address')
 
-if argc < 2:
-    raise Exception("You have to specify the uWSGI stats socket")
+    return parser.parse_args()
+
+args = parse_args()
 
 def inet_addr(arg):
     sfamily = socket.AF_INET
@@ -66,18 +76,16 @@ def abstract_unix_addr(arg):
     addr = '\0' + arg[1:]
     return sfamily, addr, socket.gethostname()
 
-addr = sys.argv[1]
-if ':' in addr:
-    sfamily, addr, host = inet_addr(addr)
-elif addr.startswith('@'):
-    sfamily, addr, host = abstract_unix_addr(addr)
+if args.address.startswith('http://'):
+    http_stats = True
+    addr = args.address
+    host = addr.split('//')[1].split(':')[0]
+elif ':' in args.address:
+    sfamily, addr, host = inet_addr(args.address)
+elif args.address.startswith('@'):
+    sfamily, addr, host = abstract_unix_addr(args.address)
 else:
-    sfamily, addr, host = unix_addr(addr)
-
-try:
-    freq = int(sys.argv[2])
-except IndexError:
-    freq = 1
+    sfamily, addr, host = unix_addr(args.address)
 
 screen = curses.initscr()
 curses.noecho()
@@ -147,21 +155,26 @@ while True:
     if fast_screen == 1:
         screen.timeout(100)
     else:
-        screen.timeout(freq*1000)
+        screen.timeout(args.frequency * 1000)
 
     screen.clear()
 
     js = ''
 
     try:
-        s = socket.socket(sfamily, socket.SOCK_STREAM)
-        s.connect(addr)
+        if http_stats:
+            r = urllib2.urlopen(addr)
+            js = r.read().decode('utf8', 'ignore')
+        else:
+            s = socket.socket(sfamily, socket.SOCK_STREAM)
+            s.connect(addr)
 
-        while True:
-            data = s.recv(4096)
-            if len(data) < 1:
-                break
-            js += data.decode('utf8', 'ignore')
+            while True:
+                data = s.recv(4096)
+                if len(data) < 1:
+                    break
+                js += data.decode('utf8', 'ignore')
+            s.close()
     except IOError as e:
         if e.errno != errno.EINTR:
             raise
@@ -308,7 +321,6 @@ while True:
 
     screen.refresh()
 
-    s.close()
     ch = screen.getch()
     if ch == ord('q'):
         game_over()
