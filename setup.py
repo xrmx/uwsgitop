@@ -15,5 +15,6 @@ setup(
     install_requires = [
         'simplejson',
         'argparse',
-    ]
+    ],
+    test_suite='tests'
 )
