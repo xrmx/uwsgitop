@@ -15,5 +15,9 @@ setup(
     install_requires = [
         'simplejson',
         'argparse',
+    ],
+    classifiers=[
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
     ]
 )
