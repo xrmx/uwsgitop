@@ -52,6 +52,8 @@ and to quit, press ``q``.
 +--------+---------------------------------------------------------------+
 | EXC    | Exceptions                                                    |
 +--------+---------------------------------------------------------------+
+| SIG    | Manage uwsgi signals (not unix signals)                       |
++--------+---------------------------------------------------------------+
 | STATUS | Worker is busy or free to use?                                |
 +--------+---------------------------------------------------------------+
 | AVG    | Average request time                                          |
@@ -62,7 +64,13 @@ and to quit, press ``q``.
 +--------+---------------------------------------------------------------+
 | TX     | How many data was transmitted by worker                       |
 +--------+---------------------------------------------------------------+
+| ReSpwn | Respawn count                                                 |
++--------+---------------------------------------------------------------+
+| HC     | Harakiri count                                                |
++--------+---------------------------------------------------------------+
 | RunT   | How long worker is working                                    |
++--------+---------------------------------------------------------------+
+|LastSpwn| Last spawn time                                               |
 +--------+---------------------------------------------------------------+
 
 Colors
@@ -83,4 +91,4 @@ much memory resources your uwsgi processes are consuming.
 Further Reading
 ---------------
 
-For more info on uWSGI Stats Server see http://projects.unbit.it/uwsgi/wiki/StatsServer
+For more info on uWSGI Stats Server see http://uwsgi-docs.readthedocs.io/en/latest/StatsServer.html
