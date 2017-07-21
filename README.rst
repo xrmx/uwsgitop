@@ -46,7 +46,7 @@ and to quit, press ``q``.
 +--------+---------------------------------------------------------------+
 | PID    | Worker PID                                                    |
 +--------+---------------------------------------------------------------+
-| REQ    | How many requests worker did since worker (re)spawn           |
+| REQ    | Number of requests the worker executed since last (re)spawn   |
 +--------+---------------------------------------------------------------+
 | RPS    | Requests per second                                           |
 +--------+---------------------------------------------------------------+
@@ -60,9 +60,9 @@ and to quit, press ``q``.
 +--------+---------------------------------------------------------------+
 | VSZ    | Worker VSZ (Virtual Memory Size, see linux memory management) |
 +--------+---------------------------------------------------------------+
-| TX     | How many data was transmitted by worker                       |
+| TX     | How much data was transmitted by the worker                   |
 +--------+---------------------------------------------------------------+
-| RunT   | How long worker is working                                    |
+| RunT   | How long the worker has been running                          |
 +--------+---------------------------------------------------------------+
 
 Colors
