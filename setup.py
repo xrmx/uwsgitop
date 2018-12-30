@@ -12,8 +12,8 @@ setup(
     license='MIT',
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     scripts=['uwsgitop'],
-    install_requires = [
-        'argparse',
+    install_requires=[
+        'argparse;python_version<"3"',
     ],
     classifiers=[
         'Programming Language :: Python',
