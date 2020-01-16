@@ -9,6 +9,7 @@ setup(
     name='uwsgitop',
     version=VERSION,
     description='uWSGI top-like interface',
+    url='https://github.com/xrmx/uwsgitop',
     license='MIT',
     long_description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     scripts=['uwsgitop'],
