@@ -259,7 +259,7 @@ def main():
             for worker in dd['workers']:
                 sigs = 0
                 wtx = human_size(worker['tx'])
-                wlastspawn = "-"
+                wlastspawn = "--:--:--"
 
                 wrunt = worker['running_time']/1000
                 if wrunt > 9999999:
