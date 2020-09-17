@@ -76,6 +76,14 @@ def parse_args():
 
     return parser.parse_args()
 
+
+def capture_curses_content(screen):
+    rows, cols = screen.getmaxyx()
+    binary_lines = (screen.instr(i, 0) for i in range(rows))
+    text_lines = (bl.decode("utf-8", errors="ignore") for bl in binary_lines)
+    return "".join(tl for tl in text_lines if tl.strip())
+
+
 def main():
 
     need_reset = True
