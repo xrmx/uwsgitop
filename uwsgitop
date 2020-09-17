@@ -71,6 +71,7 @@ def merge_worker_with_cores(workers, rps_per_worker, cores, rps_per_core):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--frequency', type=int, default=1, help='Refresh frequency in seconds')
+    parser.add_argument('-n', type=int, default=None, help='Number of cycles until uwsgitop quits')
     parser.add_argument('address', help='uWSGI stats socket or address')
 
     return parser.parse_args()
