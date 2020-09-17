@@ -38,4 +38,7 @@ nosetests.xml
 # PyCharm
 .idea
 
+# Virtual Environment
+.venv
+
 pylokit/tests/.~*
