@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import os
 try:
     import urllib2
 except ImportError:
@@ -69,9 +70,13 @@ def merge_worker_with_cores(workers, rps_per_worker, cores, rps_per_core):
     workers[:] = new_workers
 
 def parse_args():
+    default_address = os.environ.get("UWSGITOP_ADDRESS")
+    address_nargs = "?" if default_address else None
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--frequency', type=int, default=1, help='Refresh frequency in seconds')
-    parser.add_argument('address', help='uWSGI stats socket or address')
+    parser.add_argument('address', help='uWSGI stats socket or address', nargs=address_nargs,
+                        default=default_address)
 
     return parser.parse_args()
 

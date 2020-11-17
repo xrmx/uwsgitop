@@ -23,6 +23,13 @@ You'll now need to call uwsgitop as::
 
     uwsgitop http://127.0.0.1:3031
 
+
+You can also use the `UWSGITOP_ADDRESS` environment variable to define a default socket or address and run uwsgitop without any arguments like this::
+
+    export UWSGITOP_ADDRESS="/tmp/stats.socket"
+    uwsgitop
+
+
 Installation
 ------------
 
