@@ -19,5 +19,9 @@ setup(
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-    ]
+    ],
+    project_urls={
+        "Source": "https://github.com/xrmx/uwsgitop",
+        "Tracker": "https://github.com/xrmx/uwsgitop/issues",
+    }
 )
