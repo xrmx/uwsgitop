@@ -178,7 +178,10 @@ def main():
         except:
             raise Exception("unable to get uWSGI statistics")
 
-        dd = json.loads(js)
+        try:
+            dd = json.loads(js)
+        except json.JSONDecodeError:
+            continue
 
         uversion = ''
         if 'version' in dd:
