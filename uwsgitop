@@ -14,6 +14,7 @@ import sys
 import traceback
 from collections import defaultdict
 import errno
+import itertools
 
 
 def human_size(n):
@@ -71,9 +72,18 @@ def merge_worker_with_cores(workers, rps_per_worker, cores, rps_per_core):
 def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--frequency', type=int, default=1, help='Refresh frequency in seconds')
+    parser.add_argument('-n', type=int, default=None, help='Number of cycles until uwsgitop quits')
     parser.add_argument('address', help='uWSGI stats socket or address')
 
     return parser.parse_args()
+
+
+def capture_curses_content(screen):
+    rows, cols = screen.getmaxyx()
+    binary_lines = (screen.instr(i, 0) for i in range(rows))
+    text_lines = (bl.decode("utf-8", errors="ignore") for bl in binary_lines)
+    return "".join(tl for tl in text_lines if tl.strip())
+
 
 def main():
 
@@ -146,7 +156,18 @@ def main():
     async_mode = 0
     fast_screen = 0
 
+    # number of cycles to display
+    max_cycle = args.n
+    cycle = itertools.count()
+
     while True:
+
+        # break out of loop if number of cycles reached
+        if max_cycle and max_cycle == next(cycle):
+            content = capture_curses_content(screen)
+            game_over()
+            print(content)
+            break
 
         if fast_screen == 1:
             screen.timeout(100)
