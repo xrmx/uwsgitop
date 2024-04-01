@@ -1,7 +1,7 @@
 from setuptools import setup
 import os
 
-VERSION = '0.11'
+VERSION = '0.12'
 
 setup(
     maintainer='Riccardo Magliocchetti',
